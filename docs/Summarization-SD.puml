@@ -1,0 +1,46 @@
+@startuml CaptionZen
+
+title: <font color="#bc1948"><size:20><&document>Summarize Video</size></font>
+
+actor User
+participant UI
+participant ICaptionZenService <<(I, #ADD1B2)>>
+participant IYouTubeService <<(I, #ADD1B2)>>
+participant ISettingsService <<(I, #ADD1B2)>>
+participant  IChatClient as AI <<(I, #ADD1B2) Microsoft.Extensions.AI>>
+database SQLite
+
+autonumber
+User->UI: Clicks Summarize button
+UI->ICaptionZenService: NewChatAsync(VideoUrl)
+
+group Resolve Microsoft.Extensions.AI.IChatClient
+ICaptionZenService->ISettingsService: GetDefaultAiProviderIdAsync
+ISettingsService-->ICaptionZenService: AiProviderId
+ICaptionZenService->ICaptionZenService: Instantiate IChatClient implementation
+note right
+    Throws an exception if AiProvider 
+    is not configured by the user
+end note
+end
+
+ICaptionZenService->IYouTubeService: GetVideoDetailsAsync
+IYouTubeService-->ICaptionZenService: Title, Description & Thumbnail
+ICaptionZenService->IYouTubeService: GetTranscriptAsync
+IYouTubeService-->ICaptionZenService: Transcript
+
+ICaptionZenService->SQLite: New Chat record
+ICaptionZenService->SQLite: New ChatMesaage record\n(ChatId, Transcript with System Prompt etc.)
+SQLite --> ICaptionZenService: ChatId
+ICaptionZenService --> UI: ChatId, Title & CreatedOn
+UI->User: Redirected to ChatView page\n**/c/{chatId:guid}**
+
+== Summarize Transcript with AI ==
+UI -> ICaptionZenService: CompleteStreamingAsync(chatId)
+ICaptionZenService->AI: CompleteStreamingAsync
+ICaptionZenService<--AI: IAsyncEnumerable
+loop Iterate over IAsyncEnumerable
+    ICaptionZenService --> UI: Individual chunk of response(Markdown)
+    UI -> User: Update ChatMessage Bubble (Markdown to HTML)
+end
+@enduml

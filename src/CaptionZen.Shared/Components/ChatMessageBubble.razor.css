@@ -1,0 +1,116 @@
+.message-article {
+    scroll-margin-bottom: 10px;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+.sr-only {
+    clip: rect(0, 0, 0, 0);
+    border-width: 0;
+    height: 1px;
+    margin: -1px;
+    overflow: hidden;
+    padding: 0;
+    position: absolute;
+    white-space: nowrap;
+    width: 1px;
+}
+
+.message-container {
+    padding-bottom: 18px;
+    padding-top: 18px;
+    width: 100%;
+    margin: auto;
+    padding-left: .75rem;
+    padding-right: .75rem;
+}
+
+.user-message-container {
+    max-width: 70%;
+    padding-bottom: .625rem;
+    padding-top: .625rem;
+    padding-left: 1.25rem;
+    padding-right: 1.25rem;
+    background-color: var(--neutral-layer-4);
+    border: calc(var(--stroke-width) * 1px) solid var(--neutral-layer-4);
+    border-radius: calc(var(--control-corner-radius) * 1px);
+}
+
+.assistant-message-container {
+    display: flex;
+    gap: 1rem;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.assistant-message-icon-column {
+    display: flex;
+    position: relative;
+    flex-direction: column;
+    flex-shrink: 0;
+    align-items: flex-end;
+}
+
+.assistant-message-icon-outer-container {
+    display: flex;
+    height: 2rem;
+    width: 2rem;
+    align-items: center;
+    align-items: center;
+    overflow: hidden;
+    border-radius: 9999px;
+    outline: solid 1px var(--neutral-stroke-rest);
+}
+
+.assistant-message-icon-container {
+    display: flex;
+    position: relative;
+    height: 2rem;
+    width: 2rem;
+    padding: .25rem;
+    background-color: var(--neutral-layer);
+    border-radius: .125rem;
+    justify-content: center;
+    align-items: center;
+}
+
+.assistant-message-text-container {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    min-width: 0;
+    gap: .25rem;
+}
+
+@media (min-width: 1280px) {
+    .message-container {
+        padding-left: 1.25rem;
+        padding-right: 1.25rem;
+    }
+}
+
+@media (min-width: 1024px) {
+    .message-container {
+        padding-left: 1rem;
+        padding-right: 1rem;
+    }
+
+    .assistant-message-container {
+        gap: 1.5rem;
+    }
+}
+
+@media (min-width: 768px) {
+    
+    .message-container {
+        padding-left: 1.25rem;
+        padding-right: 1.25rem;
+    }
+
+    .assistant-message-container {
+        gap: 1.25rem;
+        max-width: 48rem;
+    }
+}

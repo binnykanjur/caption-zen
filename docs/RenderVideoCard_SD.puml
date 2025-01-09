@@ -1,0 +1,15 @@
+@startuml Display Video Card (Thumbnail)
+
+title: <font color="#bc1948"><size:20>Display <&video>Video Thumbnail</size></font>
+
+actor User
+participant UI
+participant IYouTubeService <<(I, #ADD1B2)>>
+
+autonumber
+User->UI: Provide YouTube Video URL
+UI->IYouTubeService: GetVideoDetailsAsync(VideoUrl)
+IYouTubeService-->UI: Title, Description & Thumbnail
+UI-->User: Display Video Title, Description & Thumbnail
+
+@enduml

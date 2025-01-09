@@ -1,0 +1,71 @@
+<article class="message-article">
+    <h5 class="sr-only">@(UserMessage?"You said:":"CaptionZen said:")</h5>
+    <div class="message-container">
+        @if (UserMessage)
+        {
+            <div style="gap:.25rem;align-items: flex-end;flex-direction: column;width: 100%;display: flex;margin-left:auto; margin-right:auto; max-width:48rem">
+                <div class="user-message-container">
+                    @if (_message is not null) {
+                        @((MarkupString)MarkdownService.ConvertToHtml(_message))
+                    } else if (ChildContent is not null) {
+                        @ChildContent
+                    }
+                </div>
+            </div>
+        }
+        else
+        {
+            <div class="assistant-message-container">
+                <div class="assistant-message-icon-column">
+                    <div class="assistant-message-icon-outer-container">
+                        <div class="assistant-message-icon-container">
+                            <img src="app-logo.svg" alt="Caption Zen" />
+                        </div>
+                    </div>
+                </div>
+                <div class="assistant-message-text-container">
+                    <div style="display: flex;flex-direction: column;max-width: 100%;flex-grow: 1">
+                        @if (ChildContent is not null) {
+                            @ChildContent
+                        } else {
+                            if (string.IsNullOrWhiteSpace(_message)) {
+                                <div style="width: 100%; display: flex; flex-direction: column; justify-content:center; align-items: center;padding: 12px;">
+                                    Please wait...
+                                    <FluentProgress Width="100px;"></FluentProgress>
+                                </div>
+                            }else {
+                                    @((MarkupString)MarkdownService.ConvertToHtml(_message))
+                            }
+                        }
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+</article>
+
+@code {
+    [Inject] private Services.MarkdownService MarkdownService { get; set; } = null!;
+
+    [Parameter] public bool UserMessage { get; set; }
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+    [Parameter] public IAsyncEnumerable<Services.StreamingChatResponseUpdate>? StreamingChatResponses { get; set; }
+
+    private string? _message = null;
+
+    protected override async Task OnInitializedAsync() {
+        if (StreamingChatResponses is null) return;
+
+        await RenderStreamingResponseAsync();
+    }
+
+    private async Task RenderStreamingResponseAsync() {
+        if (StreamingChatResponses is null) return;
+
+        _message = string.Empty;
+        await foreach (var item in StreamingChatResponses) {
+            _message = _message + item.Text;
+            StateHasChanged();
+        } 
+    }
+}

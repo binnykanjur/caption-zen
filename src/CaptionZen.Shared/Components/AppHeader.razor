@@ -1,0 +1,29 @@
+<div class="app-header-container">
+    @if (Mode == AppHeaderDisplayMode.Full || Mode == AppHeaderDisplayMode.HamburgerOnly) {
+        <button class="btn" @onclick="OnToggleClickedAsync">
+            <FluentIcon Value="@(new Icons.Regular.Size24.Navigation())" Color="Color.Neutral" />
+        </button>
+    }
+
+    @if (Mode == AppHeaderDisplayMode.Full || Mode == AppHeaderDisplayMode.IconAndText) {
+        <div class="app-logo-title-container">
+            <img src="app-logo.svg" alt="CaptionZen Logo" class="app-logo" />
+            <p>CAPTION<span>ZEN</span></p>
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter] public AppHeaderDisplayMode Mode { get; set; } = AppHeaderDisplayMode.Full;
+    [Parameter] public EventCallback OnTogglePaneClicked { get; set; }
+
+    private async Task OnToggleClickedAsync() {
+        await OnTogglePaneClicked.InvokeAsync();
+    }
+
+    public enum AppHeaderDisplayMode {
+        Full = 1,
+        IconAndText,
+        HamburgerOnly
+    }
+}

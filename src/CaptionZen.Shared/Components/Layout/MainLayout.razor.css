@@ -1,0 +1,6 @@
+﻿.conversation-list-item-template {
+    display: flex;
+    flex-direction: column;
+    margin-left: 0.8rem;
+    justify-content: center;
+}

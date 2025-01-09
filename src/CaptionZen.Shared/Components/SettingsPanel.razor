@@ -1,0 +1,98 @@
+﻿@using CaptionZen.Shared.Services
+@using Microsoft.Extensions.Logging
+
+@implements IDialogContentComponent
+@inject ILogger<SettingsPanel> Logger
+@inject ICaptionZenService CaptionZenService
+
+<FluentSelect TOption="AIProviderInfo"
+              Label="AI Providers"
+              Items="@Providers"
+              OptionValue="@(e => e.Id.ToString())"
+              OptionText="@(e => e.Name)"
+              Style="margin-bottom: 10px"
+              @bind-SelectedOption="@SelectedProvider"
+              @onchange="OnAiProviderSelectionChanged" />
+
+@if (SelectedProvider is not null) {
+    <div>
+        @if (SelectedProvider.IsEndpointRequired) {
+            <FluentTextField Value=@SelectedProvider.Endpoint Immediate="true" ImmediateDelay="500"
+                             Label="Endpoint" Placeholder="@SelectedProvider.EndpointHintText"
+                             ValueChanged="OnEndpointSettingValueChanged"
+                             InputMode="InputMode.Url" Style="margin-bottom: 10px;width:100%" />
+        }
+
+        @if (SelectedProvider.IsApiKeyRequired) {
+            <FluentTextField Value=@SelectedProvider.ApiKey Immediate="true" ImmediateDelay="500" 
+                             TextFieldType="TextFieldType.Password"
+                             Label="API Key" Placeholder="@SelectedProvider.ApiKeyHintText"
+                             ValueChanged="OnApiKeySettingValueChanged" Style="margin-bottom: 10px;width:100%" />
+        }
+
+        @if (SelectedProvider.IsModelIdRequired) {
+            <FluentTextField Value=@SelectedProvider.ModelId Immediate="true" ImmediateDelay="500"
+                             Label="Model ID" Placeholder="@SelectedProvider.ModelIdHintText"
+                             ValueChanged="OnModelIdSettingValueChanged" Style="margin-bottom: 10px;width:100%" />
+        }
+
+        <div style="padding-top: 6px">
+            @if (!string.IsNullOrEmpty(SelectedProvider.HelpText)) {
+                <p>@SelectedProvider.HelpText</p>
+            }
+            <p><a href="@SelectedProvider.GetStartedUrl" target="_blank">@SelectedProvider.GetStartedText</a></p>
+        </div>
+    </div>
+}
+
+@code {
+    private IEnumerable<AIProviderInfo> Providers { get; set; } = null!;
+    private AIProviderInfo? SelectedProvider { get; set; }
+
+    protected override async Task OnInitializedAsync() {
+        var defaultId = await CaptionZenService.GetDefaultAIProviderIdAsync();
+        Providers = await CaptionZenService.GetAvailableAiProvidersAsync();
+        if (defaultId is null) {
+            SelectedProvider = Providers.First();
+        } else {
+            SelectedProvider = Providers.FirstOrDefault(s => s.Id == defaultId);
+        }
+
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task OnAiProviderSelectionChanged(ChangeEventArgs e) {
+        if (e.Value is null) return;
+
+        var selectedAiProviderId = Guid.Parse(e.Value?.ToString() ?? Guid.Empty.ToString());
+        SelectedProvider = Providers.FirstOrDefault(s => s.Id == selectedAiProviderId);
+
+        await CaptionZenService.SetDefaultAIProviderIdAsync(selectedAiProviderId);
+    }
+
+    private async Task OnEndpointSettingValueChanged(string? value){
+        if (string.Equals(SelectedProvider!.Endpoint, value)) return;
+
+        SelectedProvider.Endpoint = value;
+        await SaveSettingsAsync();
+    }
+
+    private async Task OnApiKeySettingValueChanged(string? value){
+        if (string.Equals(SelectedProvider!.ApiKey, value)) return;
+
+        SelectedProvider.ApiKey = value;
+        await SaveSettingsAsync();
+    }
+
+    private async Task OnModelIdSettingValueChanged(string? value) {
+        if (string.Equals(SelectedProvider!.ModelId, value)) return;
+
+        SelectedProvider.ModelId = value;
+        await SaveSettingsAsync();
+    }
+
+    private async Task SaveSettingsAsync() {
+        await CaptionZenService.SaveSettingAsync(SelectedProvider);
+    }
+
+}

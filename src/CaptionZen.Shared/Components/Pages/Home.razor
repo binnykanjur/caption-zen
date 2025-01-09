@@ -1,0 +1,186 @@
+﻿@page "/"
+@using System.Linq
+@using System.Net.Http.Json
+@using CaptionZen.Shared.Services
+@using CaptionZen.Shared.Components.Layout
+@using Microsoft.FluentUI.AspNetCore.Components
+
+<PageTitle>CaptionZen</PageTitle>
+
+<AnchoredLayout>
+    <Header>
+        <div class="header-container">
+            @if (NavigationViewPaneState is not null) {
+                AppHeader.AppHeaderDisplayMode mode = AppHeader.AppHeaderDisplayMode.Full;
+                var showHeader = true;
+                if (NavigationViewPaneState.Overlay && !NavigationViewPaneState.CompactPaneMode) {
+                    mode = AppHeader.AppHeaderDisplayMode.Full;
+                } else if (NavigationViewPaneState.Overlay && NavigationViewPaneState.CompactPaneMode) {
+                    mode = AppHeader.AppHeaderDisplayMode.IconAndText;
+                } else if (!NavigationViewPaneState.Overlay && NavigationViewPaneState.CompactPaneMode) {
+                    //Wide/Desktop mode
+                    mode = AppHeader.AppHeaderDisplayMode.IconAndText;
+                    //To avoid AppHeader being rendered both in the PaneHeader & the ContentArea Header, we don't render
+                    //the AppHeader when the Pane is open in the Desktop/Wide mode
+                    showHeader = !NavigationViewPaneState.PaneOpen;
+                }
+
+                if (showHeader) {
+                    <AppHeader Mode="@mode" OnTogglePaneClicked="TogglePaneAsync" />
+                }
+            }
+
+            <FluentSpacer />
+
+            <button class="btn" style="margin: 8px 4px 8px 4px" @onclick="@(() => NavigationManager.NavigateTo($"/"))">
+                <FluentIcon Value="@(new Icons.Regular.Size24.Add())" Color="Color.Neutral" />
+            </button>
+        </div>
+    </Header>
+    <Content>
+        <div class="content-container">
+            <FluentMessageBarProvider Section="MESSAGE_SECTION" Format="MessageFormat.Notification" />
+            <div style="display: flex; flex-direction: column; max-width: 600px; padding-left: 0.75rem; padding-right:0.75rem;">
+                @if (_videoDetails != null)
+                {
+                    <FluentCard MinimalStyle="true" style="width: 100%; height: auto; margin-bottom: 16px;">
+                        <img class="video-thumbnail" src="@_videoDetails.ThumbnailUrl" alt="Video Thumbnail" />
+                        <FluentLabel style="margin: 12px 0;" Typo="Typography.H3" Weight="FontWeight.Bold">@_videoDetails.Title</FluentLabel>
+                        <FluentLabel Typo="Typography.Subject" Weight="FontWeight.Normal">@_videoDetails.Description</FluentLabel>
+                    </FluentCard>
+                }
+                else
+                {
+                    <FluentLabel style="padding-bottom:16px" Typo="Typography.H2">Which video should I summarize for you?</FluentLabel>
+                }
+
+                <ChatMessageTextBox Value="@_videoUrl" IsBusy="_isBusy"
+                                    PlaceholderText="YouTube Video URL" ActionText="Summarize"
+                                    NonMobileMaxWidth="600px" ApplyPadding="false"
+                                    OnInputChanged=@OnChatMessageInputChanged OnActionInvoked=@OnSummarizeInvoked />
+            </div>
+        </div>
+    </Content>
+</AnchoredLayout>
+
+@code {
+    [Inject] private HttpClient HttpClient { get; set; } = null!;
+    [Inject] private IYouTubeService YouTubeService { get; set; } = null!;
+    [Inject] private ICaptionZenService CaptionZenService { get; set; } = null!;
+    [Inject] private IToastService ToastService { get; set; } = null!;
+    [Inject] private IMessageService MessageService { get; set; } = null!;
+    [Inject] private NavigationManager NavigationManager { get; set; } = null!;
+    [Inject] private NavigationParams NavigationParams { get; set; } = null!;
+
+    [CascadingParameter] protected NavigationViewPaneState? NavigationViewPaneState{ get; set; }
+
+    private string _videoUrl = "";
+    private VideoDetails? _videoDetails;
+    bool _isBusy = false;
+    bool _startProcessDisabled = true;
+
+    private async void OnChatMessageInputChanged(string value) {
+        _videoUrl = value;
+        await UpdateVideoDetailsAsync();
+
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async void OnSummarizeInvoked(string value) {
+        await SummarizeAsync();
+    }
+
+    private async Task HandleOnInputAsync(ChangeEventArgs e) {
+        var val = e.Value as string;
+        if (val is null || val == _videoUrl) return;
+
+        _videoUrl = val;
+        await UpdateVideoDetailsAsync();
+
+        _startProcessDisabled = _videoDetails is null;
+    }
+
+    private async Task HandleKeyPress(KeyboardEventArgs e) {
+        if (e.Key == "Enter" && !e.ShiftKey) {
+            await SummarizeAsync();
+        }
+    }
+
+    private async Task UpdateVideoDetailsAsync() {
+        if (string.IsNullOrWhiteSpace(_videoUrl)) {
+            _videoDetails = null;
+        } else {
+            try {
+                _isBusy = true;
+                var videoDetails = await YouTubeService.GetVideoDetailsAsync(_videoUrl);
+                if (videoDetails is not null && string.IsNullOrWhiteSpace(videoDetails.Description)) {
+                    videoDetails.Description = "No description available";
+                }
+                _videoDetails = videoDetails;
+            } finally {
+                _isBusy = false;
+            }
+        }
+    }
+
+    private CancellationTokenSource? _actionCancellationTokenSource = null;
+
+    private async Task SummarizeAsync() {
+        if (_videoDetails is null || _isBusy || NavigationParams.NewChatId is not null) return;
+
+        _isBusy = true;
+        _actionCancellationTokenSource = new();
+        try {
+            var newChat = await CaptionZenService.NewChatAsync(_videoUrl, _actionCancellationTokenSource.Token).ConfigureAwait(false);
+            NavigationParams.NewChatId = newChat.Id;
+            NavigationParams.ChatTitle = newChat.Title;
+            NavigationParams.ChatCreatedOn = newChat.CreatedOn;
+            NavigationManager.NavigateTo($"/c/{NavigationParams.NewChatId.ToString()}");
+        } catch (ArgumentException aEx) {
+            ToastService.ShowError(aEx.Message);
+        } catch (AIProviderNotConfiguredException aiEx) {
+            ToastService.ShowError(aiEx.Message);
+        } finally {
+            _actionCancellationTokenSource?.Dispose();
+            _actionCancellationTokenSource = null;
+            _isBusy = false;
+        }
+    }
+
+    private async Task CancelActionAsync() {
+        try {
+            if (_actionCancellationTokenSource is null) return;
+
+            await _actionCancellationTokenSource.CancelAsync().ConfigureAwait(false);
+            _actionCancellationTokenSource.Dispose();
+            _actionCancellationTokenSource = null;
+        } finally {
+            _isBusy = false;
+        }
+    }
+
+    private async Task TogglePaneAsync(){
+        await NavigationParams.NavigationView!.TogglePaneAsync();
+    }
+
+    private void ShowMessageBar(string message, MessageIntent messageIntent, int timeout = 5000) {
+        MessageService.ShowMessageBar(options => {
+            options.Title = message;
+            options.Intent = messageIntent;
+            options.Section = "MESSAGE_SECTION";
+            options.Timeout = timeout;
+        });
+    }
+
+    private string currentMessage = "";
+    private List<string> messages = new();
+    private Task HandleSendMessage() {
+        if (!string.IsNullOrWhiteSpace(currentMessage)) {
+            messages.Add(currentMessage);
+            currentMessage = string.Empty;
+            StateHasChanged();
+        }
+
+        return Task.CompletedTask;
+    }
+}

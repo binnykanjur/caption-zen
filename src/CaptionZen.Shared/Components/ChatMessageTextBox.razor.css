@@ -1,0 +1,84 @@
+.container {
+    width: 100%;
+    padding-left: calc(.75rem * var(--container-padding-multiple));
+    padding-right: calc(.75rem * var(--container-padding-multiple));
+}
+
+.input-container {
+    display: flex;
+    position: relative;
+    margin-left: auto;
+    margin-right: auto;
+    border: calc(var(--stroke-width) * 1px) solid var(--neutral-stroke-rest);
+    border-radius: calc(var(--control-corner-radius) * 1px);
+}
+
+.inputBox {
+    width: 100%;
+    padding: 15px 50px;
+    font-size: 1rem;
+    border: none;
+    border-radius: calc(var(--control-corner-radius) * 1px);
+    box-sizing: border-box;
+    background-color: transparent;
+    color: inherit
+}
+
+.icon {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 20px;
+    height: 20px;
+}
+
+.youTube-icon {
+    left: 15px;
+}
+
+.send-icon {
+    right: 15px;
+    cursor: pointer;
+}
+
+.caution-text-container {
+    width: 100%;
+    position: relative;
+    color: var(--neutral-foreground-hint);
+    font-size: .75rem;
+    line-height: 1rem;
+    text-align: center;
+    padding-bottom: .5rem;
+    padding-top: .5rem;
+    padding-left: .5rem;
+    padding-right: .5rem;
+    min-height: 1rem;
+}
+
+@media (min-width:1280px){
+    .container {
+        padding-left: calc(1.25rem * var(--container-padding-multiple));
+        padding-right: calc(1.25rem * var(--container-padding-multiple));
+    }
+}
+
+@media (min-width:1024px) {
+    .container {
+        padding-left: calc(1rem * var(--container-padding-multiple));
+        padding-right: calc(1rem * var(--container-padding-multiple));
+    }
+}
+
+@media (min-width:768px) {
+    .container {
+        padding-left: calc(1.25rem * var(--container-padding-multiple));
+        padding-right: calc(1.25rem * var(--container-padding-multiple));
+    }
+    .input-container {
+        max-width: var(--non-mobile-max-width);
+    }
+    .caution-text-container {
+        padding-left: 60px;
+        padding-right: 60px;
+    }
+}

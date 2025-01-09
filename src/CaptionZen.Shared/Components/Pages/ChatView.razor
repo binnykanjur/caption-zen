@@ -1,0 +1,147 @@
+@page "/c/{chatId:guid}"
+
+@using CaptionZen.Shared.Services
+@using CaptionZen.Shared.Components.Layout
+@using Microsoft.FluentUI.AspNetCore.Components
+
+<PageTitle>@_pageTitle</PageTitle>
+
+<AnchoredLayout>
+    <Header>
+        <div class="header-container">
+            @if (NavigationViewPaneState is not null)
+            {
+                AppHeader.AppHeaderDisplayMode mode = AppHeader.AppHeaderDisplayMode.Full;
+                var showHeader = true;
+                if (NavigationViewPaneState.Overlay && !NavigationViewPaneState.CompactPaneMode)
+                {
+                    mode = AppHeader.AppHeaderDisplayMode.Full;
+                }
+                else if (NavigationViewPaneState.Overlay && NavigationViewPaneState.CompactPaneMode)
+                {
+                    mode = AppHeader.AppHeaderDisplayMode.IconAndText;
+                }
+                else if (!NavigationViewPaneState.Overlay && NavigationViewPaneState.CompactPaneMode)
+                {
+                    mode = AppHeader.AppHeaderDisplayMode.IconAndText;
+                    showHeader = !NavigationViewPaneState.PaneOpen;
+                }
+
+                if (showHeader)
+                {
+                    <AppHeader Mode="@mode" OnTogglePaneClicked="TogglePaneAsync" />
+                }
+            }
+
+            <FluentSpacer />
+
+            <button class="btn" style="margin: 8px 4px 8px 4px" @onclick="@(() => NavigationManager.NavigateTo($"/"))">
+                <FluentIcon Value="@(new Icons.Regular.Size24.Add())" Color="Color.Neutral" />
+            </button>
+        </div>
+    </Header>
+    <Content>
+        @if(Chat is not null) {
+            //Video Details Card
+            <ChatMessageBubble UserMessage="true">
+                <div class="header-content">
+                    <img src="data:image/jpeg;base64,@(Convert.ToBase64String(Chat.Thumbnail))"
+                    alt="@Chat.Title" class="video-thumbnail" />
+                    <FluentLabel style="margin: 12px 0px 6px 0px;" Typo="Typography.H3" Weight="FontWeight.Bold">@Chat.Title</FluentLabel>
+                    <FluentAnchor Appearance="@Appearance.Hypertext" Href="@Chat.VideoUrl"
+                    target="_blank" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                        @Chat.VideoUrl
+                    </FluentAnchor>
+                </div>
+            </ChatMessageBubble>
+
+            var firstAssistantMessageFound = false;
+            foreach (var chatMessage in Chat.ChatMessages.OrderBy(cm => cm.CreatedOn)) {
+                if (!firstAssistantMessageFound){
+                    if (chatMessage.Role != ChatMessageRole.Assistant) {
+                        continue;
+                    }
+
+                    firstAssistantMessageFound = true;
+                }
+
+                <ChatMessageBubble UserMessage="@(chatMessage.Role == ChatMessageRole.User)">
+                    @((MarkupString)MarkdownService.ConvertToHtml(chatMessage.Message))
+                </ChatMessageBubble>
+            }
+
+            //Newly created chat
+            @if (_renderStreamingResponse) {
+                var streamingResponse = CaptionZenService.CompleteStreamingAsync(ChatId);
+                <ChatMessageBubble UserMessage="false" StreamingChatResponses="streamingResponse" />
+            }
+        } else {
+            <ChatMessageBubble UserMessage="true">
+                <FluentSkeleton Width="100%" Height="100%" Shimmer="true" />
+            </ChatMessageBubble>
+        }
+    </Content>
+    <Footer>
+        <ChatMessageTextBox Multiline="true" PlaceholderText="Message CaptionZen" ActionText="Send"
+        CautionText="LLMs can make mistakes. Check important info." />
+    </Footer>
+</AnchoredLayout>
+
+@code {
+    [Inject] private NavigationManager NavigationManager { get; set; } = null!;
+    [Inject] private NavigationParams NavigationParams { get; set; } = null!;
+    [Inject] private IToastService ToastService { get; set; } = null!; 
+    [Inject] private MarkdownService MarkdownService { get; set; } = null!; 
+    [Inject] private ICaptionZenService CaptionZenService { get; set; } = null!;
+
+    [Parameter] public Guid ChatId { get; set; }
+    private Guid _previousChatId;
+    [CascadingParameter] protected NavigationViewPaneState? NavigationViewPaneState { get; set; }
+
+    private ChatDetail? Chat { get; set; }
+    private string _pageTitle = "CaptionZen";
+    private bool _renderStreamingResponse = false;
+
+    private string _newMessage = "";
+    private bool _isBusy = false;
+    bool _startProcessDisabled = true;
+
+    protected override async Task OnParametersSetAsync() {
+        if (_previousChatId == ChatId) return;
+
+        _previousChatId = ChatId;
+        _renderStreamingResponse = NavigationParams.NewChatId is not null;
+        try {
+            Chat = await CaptionZenService.GetChatByIdAsync(ChatId).ConfigureAwait(false);
+            _pageTitle = $"{Chat!.Title} - CaptionZen";
+        } finally {
+            NavigationParams.NewChatId = null; 
+            NavigationParams.ChatTitle = null; 
+            NavigationParams.ChatCreatedOn = null;
+        }
+    }
+
+    private async Task HandleKeyPress(KeyboardEventArgs e) {
+        if (e.Key == "Enter" && !e.ShiftKey) {
+            await SendMessage();
+        }
+    }
+
+    private Task SendMessage() {
+        if (string.IsNullOrWhiteSpace(_newMessage)) return Task.CompletedTask;
+
+        return Task.CompletedTask;
+    }
+
+    private async Task TogglePaneAsync() {
+        await NavigationParams.NavigationView!.TogglePaneAsync();
+    }
+
+    private Task HandleOnInputAsync(ChangeEventArgs e) {
+        return Task.CompletedTask;
+    }
+
+    private Task CancelActionAsync() {
+        return Task.CompletedTask;
+    }
+}

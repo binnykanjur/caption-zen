@@ -1,0 +1,163 @@
+﻿@using CaptionZen.Shared.Components.Layout
+
+@inherits LayoutComponentBase
+
+<div style="height: 100vh;">
+
+    <FluentDesignTheme @bind-Mode="@Mode" @bind-OfficeColor="@OfficeColor" StorageName="theme" />
+
+    <NavigationView IsPaneOpenChanged="@((value) => _isPaneOpen = value)"
+    IsOverlayChanged="@((value) => _isOverlay = value)"
+    UseCompactPaneChanged="@((value) => _useCompactPane = value)"
+    PaneWidth="320" CompactPaneWidth="48">
+        <PaneHeader>
+            <AppHeader Mode="@_appHeaderMode" OnTogglePaneClicked="TogglePaneAsync" />
+        </PaneHeader>
+        <PaneContent>
+            @{
+                var width = "100%";
+                if (IsPaneInCompactState)
+                {
+                    width = "0%";
+                }
+                <ListBox Items="@_chatItems" OptionText="@(i => i?.Title)"
+                OptionValue="@(i => i?.Id.ToString())" ValueChanged="@OpenConversationAsync"
+                @bind-SelectedOption=@_selectedChat Height="100%" Width=@width>
+                </ListBox>
+            }
+        </PaneContent>
+        <PaneFooter>
+            <FluentNavMenu Expanded=@(!(!_isPaneOpen && _useCompactPane))>
+                <FluentNavLink Href="https://github.com/binnykanjur/caption-zen" Target="_blank"
+                Tooltip="CaptionZen source on GitHub" Icon="@(new AppIcons.Regular.Size24.GitHubIcon())"
+                IconColor="Color.FillInverse">
+                    Source
+                </FluentNavLink>
+                <FluentNavLink OnClick="ToggleThemeAsync" Tooltip=@($"Switch to {_themeModeTitle}")
+                Icon="_themeModeIcon" IconColor="Color.FillInverse">
+                    @_themeModeTitle
+                </FluentNavLink>
+                <FluentNavLink OnClick="OpenSiteSettingsAsync" Tooltip="Open settings pane"
+                Icon="@(new Icons.Regular.Size24.Settings())" IconColor="Color.FillInverse">
+                    Settings
+                </FluentNavLink>
+            </FluentNavMenu>
+        </PaneFooter>
+        <Content>
+            @Body
+
+            <FluentToastProvider MaxToastCount="10" />
+            <FluentDialogProvider />
+            <FluentTooltipProvider />
+        </Content>
+    </NavigationView>
+</div>
+
+@code {
+    [Inject] public IDialogService DialogService { get; set; } = null!;
+    [Inject] public Services.ICaptionZenService CaptionZenService { get; set; } = null!;
+    [Inject] private Services.NavigationParams NavigationParams { get; set; } = null!;
+    [Inject] private NavigationManager NavigationManager { get; set; } = null!;
+
+    [Parameter]
+    public Orientation Orientation { get; set; } = Orientation.Vertical;
+    [Parameter, EditorRequired]
+    public string Title { get; set; } = null!;
+
+    private AppHeader.AppHeaderDisplayMode _appHeaderMode = AppHeader.AppHeaderDisplayMode.Full;
+    private List<Services.ChatInfo> _chatItems = new();
+    private Services.ChatInfo? _selectedChat;
+
+    private bool _isPaneOpen, _isOverlay, _useCompactPane;
+    private bool IsPaneInCompactState {
+        get {
+            return _useCompactPane && !_isPaneOpen;
+        }
+    }
+
+    private string _themeModeTitle = "Light Mode";
+    private Icon _themeModeIcon = new Icons.Regular.Size24.BrightnessHigh();
+    private DesignThemeModes Mode { get; set; }
+    private OfficeColor? OfficeColor { get; set; } = Microsoft.FluentUI.AspNetCore.Components.OfficeColor.Stream;
+
+    protected override async Task OnInitializedAsync() {
+        _chatItems = await CaptionZenService.GetChatsAsync();
+    }
+
+    protected override Task OnParametersSetAsync() {
+        if (NavigationParams.NewChatId is not null &&
+            !_chatItems.Any(c => c.Id == NavigationParams.NewChatId.Value)) {
+
+            var newItem = new Services.ChatInfo {
+                    Id = NavigationParams.NewChatId.Value,
+                    Title = NavigationParams.ChatTitle!,
+                    CreatedOn = NavigationParams.ChatCreatedOn!.Value
+                };
+            _chatItems.Insert(0, newItem);
+            _selectedChat = newItem;
+        }
+
+        if (NavigationManager.Uri == NavigationManager.BaseUri) {
+            _selectedChat = null;
+        }
+
+        return Task.CompletedTask;
+    }
+
+    private async Task OpenSiteSettingsAsync() {
+        if (NavigationParams.NavigationView!.IsOverlay &&
+                NavigationParams.NavigationView!.IsPaneOpen) await TogglePaneAsync();
+
+        var dialog = await DialogService.ShowPanelAsync<SettingsPanel>(new DialogParameters() {
+                ShowTitle = true,
+                Title = "Settings",
+                Alignment = HorizontalAlignment.Right,
+                PrimaryAction = null,
+                SecondaryAction = null,
+                ShowDismiss = true,
+            });
+
+        DialogResult result = await dialog.Result;
+    }
+
+    private async Task ToggleThemeAsync() {
+        if (NavigationParams.NavigationView!.IsOverlay && 
+                NavigationParams.NavigationView!.IsPaneOpen) await TogglePaneAsync();
+
+        var newMode = DesignThemeModes.Dark;
+        if (Mode == DesignThemeModes.Dark) {
+            newMode = DesignThemeModes.Light;
+        }
+
+        SetThemeMode(newMode);
+    }
+
+    private async Task TogglePaneAsync() {
+        await NavigationParams.NavigationView!.TogglePaneAsync();
+    }
+
+    private void SetThemeMode(DesignThemeModes mode) {
+        if (Mode == mode) return;
+
+        Mode = mode;
+        if (mode == DesignThemeModes.Light) {
+            _themeModeTitle = "Dark Mode";
+            _themeModeIcon = new Icons.Regular.Size24.WeatherMoon();
+        } else {
+            _themeModeTitle = "Light Mode";
+            _themeModeIcon = new Icons.Regular.Size24.BrightnessHigh();
+        }
+    }
+
+    private async Task OpenConversationAsync(string conversationId) {
+        if (_selectedChat is not null && _selectedChat.Id == Guid.Parse(conversationId)) return;
+
+        if (NavigationParams.NavigationView!.IsOverlay) await TogglePaneAsync();
+
+        _selectedChat = _chatItems.FirstOrDefault(ci => ci.Id.ToString() == conversationId);
+        if (_selectedChat is null) return;
+
+        NavigationManager.NavigateTo($"/c/{_selectedChat.Id}");
+    }
+
+}

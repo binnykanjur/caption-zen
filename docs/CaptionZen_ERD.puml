@@ -1,0 +1,46 @@
+@startuml CaptionZen
+skinparam linetype ortho
+
+entity "AiProvider" as aip {
+  *Id : Guid
+  --
+  *Name : string
+  *Vendor : AIVendor
+  ...other attributes
+}
+
+entity "Setting" as setting {
+  *Id : int <<generated>>
+  --
+  *Name : string
+  Value : string
+  Sensitive: bool
+  *CreatedOn: DateTimeOffset
+  ModifiedOn: DateTimeOffset
+}
+
+entity "Chat" as chat {
+  *Id : Guid
+  --
+  *VideoUrl: string
+  *Title: string
+  Description: string
+  *Thumbnail: byte[]
+  *CreatedOn: DateTimeOffset
+}
+
+entity "ChatMessage" as chatMessage {
+  *Id : Guid
+  --
+  *Message : string
+  *CreatedOn: DateTimeOffset
+  Role:ChatMessageRole
+  *ModelId: string
+  --
+  ChatId: Guid <<FK>>
+  AiProviderId: Guid <<FK>>
+}
+
+chat }|..|| chatMessage
+aip }|..|| chatMessage
+@enduml

@@ -1,0 +1,20 @@
+@namespace CaptionZen.Shared.Components
+@using Microsoft.FluentUI.AspNetCore.Components.Utilities
+
+@inherits FluentListbox<TOption>
+@typeparam TOption where TOption : notnull
+@attribute [CascadingTypeParameter(nameof(TOption))]
+
+@{
+    base.BuildRenderTree(__builder);
+}
+
+@code {
+    /// <summary>
+    /// Overriding to remove the border & border-radius styles applied by default
+    /// </summary>
+    protected override StyleBuilder BorderStyle => new StyleBuilder()
+            .AddStyle("width", Width, when: !string.IsNullOrEmpty(Width))
+            .AddStyle("height", Height, when: !string.IsNullOrEmpty(Height))
+            .AddStyle("overflow-y", "auto");
+}

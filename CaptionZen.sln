@@ -1,0 +1,57 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.11.35327.3
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{8BD7A91A-0E1C-45E3-A053-D471903AE0BD}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CaptionZen.Maui", "src\CaptionZen.Maui\CaptionZen.Maui.csproj", "{9E38A69B-3301-404A-9C88-AD9A82CEDDD0}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CaptionZen.Web", "src\CaptionZen.Web\CaptionZen.Web.csproj", "{7298B13A-8705-4BBA-8373-90FA6565156D}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CaptionZen.Shared", "src\CaptionZen.Shared\CaptionZen.Shared.csproj", "{4BAE64FD-66E1-4528-BDED-1A348B357783}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{D9CE8B5B-E421-4519-B5ED-DDF57C8F423E}"
+	ProjectSection(SolutionItems) = preProject
+		.editorconfig = .editorconfig
+		.gitignore = .gitignore
+		CaptionZen.jpeg = CaptionZen.jpeg
+		Directory.Packages.props = Directory.Packages.props
+		LICENSE = LICENSE
+		README.md = README.md
+		summarization-sequence-diagram.puml = summarization-sequence-diagram.puml
+	EndProjectSection
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{9E38A69B-3301-404A-9C88-AD9A82CEDDD0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9E38A69B-3301-404A-9C88-AD9A82CEDDD0}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9E38A69B-3301-404A-9C88-AD9A82CEDDD0}.Debug|Any CPU.Deploy.0 = Debug|Any CPU
+		{9E38A69B-3301-404A-9C88-AD9A82CEDDD0}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9E38A69B-3301-404A-9C88-AD9A82CEDDD0}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9E38A69B-3301-404A-9C88-AD9A82CEDDD0}.Release|Any CPU.Deploy.0 = Release|Any CPU
+		{7298B13A-8705-4BBA-8373-90FA6565156D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7298B13A-8705-4BBA-8373-90FA6565156D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7298B13A-8705-4BBA-8373-90FA6565156D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7298B13A-8705-4BBA-8373-90FA6565156D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4BAE64FD-66E1-4528-BDED-1A348B357783}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4BAE64FD-66E1-4528-BDED-1A348B357783}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4BAE64FD-66E1-4528-BDED-1A348B357783}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4BAE64FD-66E1-4528-BDED-1A348B357783}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{9E38A69B-3301-404A-9C88-AD9A82CEDDD0} = {8BD7A91A-0E1C-45E3-A053-D471903AE0BD}
+		{7298B13A-8705-4BBA-8373-90FA6565156D} = {8BD7A91A-0E1C-45E3-A053-D471903AE0BD}
+		{4BAE64FD-66E1-4528-BDED-1A348B357783} = {8BD7A91A-0E1C-45E3-A053-D471903AE0BD}
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {E15A54D2-EBC0-437C-B13C-D67827DFA606}
+	EndGlobalSection
+EndGlobal
